@@ -22,8 +22,19 @@ load_dotenv()
 
 # Make sure the API key is loaded from the environment variable
 gemini_api_key = os.getenv("GEMINI_API_KEY")
+discord_token = os.getenv("DISCORD_TOKEN")
+
 if not gemini_api_key:
-    raise ValueError("GEMINI_API_KEY not found in environment variables.")
+    raise ValueError(
+        "GEMINI_API_KEY not found in environment variables. "
+        "Please set this in your Railway dashboard under Variables."
+    )
+
+if not discord_token:
+    raise ValueError(
+        "DISCORD_TOKEN not found in environment variables. "
+        "Please set this in your Railway dashboard under Variables."
+    )
 
 # Configure Gemini API with the API key
 genai.configure(api_key=gemini_api_key)

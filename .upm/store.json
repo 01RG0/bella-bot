@@ -1,0 +1,1 @@
+{"version":2,"languages":{"python3-uv":{"specfileHash":"2eeeec4b009f7d3536ac0c974a52192d","lockfileHash":"3469f4426be5feacc15a3a063f9cb215","guessedImports":["discord.py","python-dotenv","pydub","langdetect","requests","google-generativeai","SpeechRecognition","Flask"],"guessedImportsHash":"82f1902b916fe944f26b74172c05706c"}}}

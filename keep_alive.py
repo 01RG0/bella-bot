@@ -1,6 +1,7 @@
 from flask import Flask
 from threading import Thread
 import logging
+from waitress import serve
 
 app = Flask('')
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +19,7 @@ def health():
 
 def run():
     try:
-        app.run(host='0.0.0.0', port=8080)
+        serve(app, host='0.0.0.0', port=8080)
     except Exception as e:
         logging.error(f"Error starting web server: {str(e)}")
 
@@ -26,8 +27,8 @@ def run():
 def keep_alive():
     try:
         t = Thread(target=run)
-        t.daemon = True  # Set as daemon thread
+        t.daemon = True
         t.start()
-        logging.info("Web server started successfully")
+        logging.info("Production web server started successfully")
     except Exception as e:
         logging.error(f"Error in keep_alive: {str(e)}")

@@ -16,6 +16,8 @@ import speech_recognition as sr
 from PIL import Image
 import io
 from gen import generate_image
+import logging
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv()
@@ -41,10 +43,10 @@ genai.configure(api_key=gemini_api_key)
 
 # Model configuration for Gemini (Bella's personality)
 generation_config = {
-    "temperature": 2,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_output_tokens": 8192,
+    "temperature": 1.5,
+    "top_p": 0.85,
+    "top_k": 20,
+    "max_output_tokens": 4096,
     "response_mime_type": "text/plain",
 }
 
@@ -106,6 +108,11 @@ def extract_duration(message: str) -> Optional[int]:
 @bot.event
 async def on_ready():
     print(f'Bella is online as {bot.user}')
+    
+    # Schedule periodic memory cleanup
+    while True:
+        await cleanup_old_memories()
+        await asyncio.sleep(3600)  # Run every hour
 
 
 @bot.event
@@ -159,20 +166,31 @@ async def process_voice_message(attachment) -> str:
         return ""
 
 
-async def process_image(attachment) -> Image.Image:
-    """Process image for Gemini Vision"""
+async def process_image(attachment):
+    """Process image with optimized settings"""
     try:
-        # Download and open the image
+        # Set max image size
+        MAX_SIZE = (800, 800)  # Reduced from potential larger sizes
+        
         image_data = await attachment.read()
         image = Image.open(io.BytesIO(image_data))
-
-        # Verify image was loaded successfully
-        if not image:
-            raise ValueError("Failed to load image")
-
-        return image
+        
+        # Resize large images to improve processing speed
+        if image.size[0] > MAX_SIZE[0] or image.size[1] > MAX_SIZE[1]:
+            image.thumbnail(MAX_SIZE, Image.Resampling.LANCZOS)
+        
+        # Convert to RGB if needed
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+            
+        # Optimize image quality
+        output = io.BytesIO()
+        image.save(output, format='JPEG', quality=85, optimize=True)
+        output.seek(0)
+        return output
+        
     except Exception as e:
-        print(f"Image processing error: {str(e)}")
+        logging.error(f"Error processing image: {str(e)}")
         return None
 
 
@@ -528,6 +546,15 @@ async def imagine(ctx, *, prompt: str):
     except Exception as e:
         print(f"Error generating image: {str(e)}")
         await ctx.send("There was an error generating the image 😔")
+
+
+# Add near other memory-related functions
+async def cleanup_old_memories():
+    """Cleanup memories older than 24 hours to prevent memory bloat"""
+    try:
+        memory.cleanup_old_memories(max_age_hours=24)
+    except Exception as e:
+        logging.error(f"Error cleaning up memories: {str(e)}")
 
 
 # Run the bot securely by loading token from an environment variable or file
